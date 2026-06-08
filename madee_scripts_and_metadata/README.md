@@ -1,14 +1,22 @@
-Madee's notes (Team June 8 2026)
-
-Population-wise_phasing.xlsx  has the information on how the population specific reference panels were specified
+# Maddie's notes (Team June 8 2026)
  
-For samples that were sequenced with regular illumina it specifies the population of the sample, and the reference panel population, and for the samples with 10x data it gives the reference panel population name
+## Reference panel information
  
-The one thing, is I think this contains more samples than are actually in the phased vcfs I shared with you
+`Population-wise_phasing.xlsx` has the information on how the population specific reference panels were specified.
  
-And examples of whatshap and shapeit. These are both run separately per chromosome, and whatshap was run separately per sample. I think theoretically you should be able to provide a population vcf and just give which sample you want to analyze as a parameter, but I had issues with this for some reason so I just subset the vcf to a single sample first. And for shapeit, I specified Ne as a parameter, this was for red kite which is why it's only 20,000 
-whatshap_phase.sh
-shapeit5.sh
+For samples sequenced with regular Illumina it specifies the population of the sample and the reference panel population. For samples with 10x data it gives the reference panel population name.
  
-In between these scripts, I merge the whatshap output for all samples for one chromosome to run in shapeit
+Note: this file likely contains more samples than are actually in the phased VCFs shared.
+ 
+## Pipeline
+ 
+Phasing is run separately per chromosome. The steps are:
+ 
+1. **WhatsHap** — run separately per sample. Theoretically you can provide a population VCF and specify which sample to analyze as a parameter, but this caused issues so the VCF was subset to a single sample first.
+2. **Merge** — WhatsHap output for all samples for one chromosome is merged before running SHAPEIT.
+3. **SHAPEIT5** — run per chromosome on the merged file. `Ne` was specified as a parameter (set to 20,000 here, as this was for red kite).
+## Scripts
+ 
+- `whatshap_phase.sh`
+- `shapeit5.sh`
  
