@@ -50,3 +50,10 @@ Samples with within-read physical linkage only, no statistical phasing.
 
 | Simulations | ⬜ Optional |
 | Downsampling curve, will give us an idea of how upsampling will look like | ⬜ Optional |
+
+## NOTE from Madee
+
+Another heads up, there is one sample that has been mislabelled (both in the vcf and for the bam file). The sample is called OEN-CYP-C6A298021 according to the vcf/bam, but should actually be GR-DAD-C6A298021. In the list of sample names for phasing I sent you it is referred to as that but I've added a note now.
+ 
+Basically important to note that this is a melanoleuca sample and not cypriaca as the name refers to... but probably not that important for what you're doing.
+ 
