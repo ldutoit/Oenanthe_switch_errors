@@ -2,8 +2,8 @@
 #SBATCH --job-name=whatshap           #Name of the job   
 #SBATCH --ntasks=1               #Requesting 1 node (is always 1)
 #SBATCH --cpus-per-task=1        #Requesting 1 CPU
-#SBATCH --mem-per-cpu=14G         #Requesting 1 Gb memory  
-#SBATCH --time=4:00:00           #Requesting 4 hours running time 
+#SBATCH --mem-per-cpu=56G         #Requesting 1 Gb memory  
+#SBATCH --time=8:00:00           #Requesting 4 hours running time 
 #SBATCH --output logs/whatshap_%a_%j.log          #Log
 #SBATCH --array=1-379%40         #Run array job
 module load       stack/.2024-05-silent  gcc/13.2.0 vcftools/0.1.16-tc6l6nq

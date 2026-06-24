@@ -1,0 +1,16 @@
+#!/bin/bash   
+#SBATCH --job-name=merge           #Name of the job   
+#SBATCH --ntasks=1               #Requesting 1 node (is always 1)
+#SBATCH --cpus-per-task=2        #Requesting 1 CPU
+#SBATCH --mem-per-cpu=40G         #Requesting 1 Gb memory  
+#SBATCH --time=8:00:00           #Requesting 4 hours running time 
+#SBATCH --output logs/merge_%j.log          #Log
+module load bcftools
+#cd whatshap_phase
+#gunzip *
+#cd ..
+#bgzip  whatshap_phase/*.vcf
+#for vcf in whatshap_phase/chr*.vcf.gz; do bcftools index "$vcf";done
+bcftools merge whatshap_phase/chr*.vcf.gz \
+  -o merged379.minQ20.minDP5.maxDP60.vcf.gz -O z
+bcftools index merged379.minQ20.minDP5.maxDP60.vcf.gz # what about missing data
