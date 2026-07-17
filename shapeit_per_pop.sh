@@ -26,8 +26,8 @@ POP=${POPS[$SLURM_ARRAY_TASK_ID]}
 indir="./"
 outdir="shapeit_phasing"
 SAMPLES="samples.txt"
-GROUND_TRUTH="chr1_phased_sortedsamples.chr1_20MB.vcf.gz"
-INPUT="merged379.minQ20.minDP5.maxDP60.chr1_20MB.vcf.gz"
+GROUND_TRUTH="merged379.minQ20.minDP5.maxDP60.chr1_20MB.vcf.gz"
+INPUT="data/chr1_unphased_20Mb.vcf.gz"
 
 mkdir -p ${outdir}/${POP}
 
@@ -40,9 +40,13 @@ echo "Pop: ${POP}, samples: $(wc -l < ${outdir}/${POP}/pop_samples.txt)"
 # Subset VCF to this pop
 bcftools view -s ${SAMPLE_LIST} ${INPUT} -O z -o ${outdir}/${POP}/input_${POP}.vcf.gz
 tabix -f ${outdir}/${POP}/input_${POP}.vcf.gz
+bcftools index -f ${outdir}/${POP}/input_${POP}.vcf.gz
+
 
 bcftools view -s ${SAMPLE_LIST} ${GROUND_TRUTH} -O z -o ${outdir}/${POP}/ground_truth_${POP}.vcf.gz
-tabix -f ${outdir}/${POP}/ground_truth_${POP}.vcf.gz
+tabix -f  ${outdir}/${POP}/ground_truth_${POP}.vcf.gz
+bcftools index -f ${outdir}/${POP}/ground_truth_${POP}.vcf.gz
+
 
 # Phase
 conda activate shapeit5
@@ -62,22 +66,29 @@ bcftools index -t ${outdir}/${POP}/${POP}.shapeit5_phased.bcf
 
 # Switch errors per sample
 while IFS= read -r SAMPLE; do
-  echo "Subsetting $SAMPLE..."
-  bcftools view -s ${SAMPLE} \
-    ${outdir}/${POP}/${POP}.shapeit5_phased.bcf \
-    -O z -o ${outdir}/${POP}/${SAMPLE}.phased.vcf.gz
-  bcftools index ${outdir}/${POP}/${SAMPLE}.phased.vcf.gz
 
-  bcftools view -s ${SAMPLE} \
-    ${outdir}/${POP}/ground_truth_${POP}.vcf.gz \
-    -O z -o ${outdir}/${POP}/${SAMPLE}.ground_truth.vcf.gz
+####MYWAY
+
+## subsetting the ground truth to only the phase sites in it
+bcftools view -s $SAMPLE ${GROUND_TRUTH} -Ou \
+| bcftools view -Ov \
+| awk -F'\t' 'BEGIN{OFS="\t"} /^#/ {print; next} $10 ~ /\|/ {print}' \
+| bgzip > ${outdir}/${POP}/${SAMPLE}.ground_truth.vcf.gz
+
   bcftools index ${outdir}/${POP}/${SAMPLE}.ground_truth.vcf.gz
 
-  echo "Comparing $SAMPLE..."
-  whatshap compare \
-    ${outdir}/${POP}/${SAMPLE}.ground_truth.vcf.gz \
-    ${outdir}/${POP}/${SAMPLE}.phased.vcf.gz \
-    > ${outdir}/${POP}/${POP}.${SAMPLE}.switch_errors.txt
+
+## subsetting the phase shapeit file to only site in the ground truth
+echo "Subsetting $SAMPLE..."
+bcftools view -s $SAMPLE \
+  ${outdir}/${POP}/${POP}.shapeit5_phased.bcf \
+  -Ou \
+| bcftools view -T ${outdir}/${POP}/${SAMPLE}.ground_truth.vcf.gz \
+  -O z -o ${outdir}/${POP}/${SAMPLE}.phased.vcf.gz
+
+bcftools index ${outdir}/${POP}/${SAMPLE}.phased.vcf.gz
+
+
 done < ${outdir}/${POP}/pop_samples.txt
 
 grep "switch error rate" ${outdir}/${POP}/*switch* | uniq > summary_switch_errors_${POP}.txt

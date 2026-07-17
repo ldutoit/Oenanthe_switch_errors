@@ -34,3 +34,12 @@ gunzip oenMel1.1.fasta.gz -c > oenMel1.1.fasta
 module load      stack/.2024-05-silent  gcc/13.2.0  bwa/0.7.17  stack/.2024-03-beta-silent  gcc/13.2.0-i6mrihr samtools/1.17-7ay44i2
 samtools faidx oenMel1.1.fasta
 ```
+
+```
+# first 20 million bases (POS 1-20000000) of chr1
+module load bcftools
+cd data
+bcftools view -r chr1:1-20000000 chr1_unphased.vcf.gz -Oz -o chr1_unphased_20Mb.vcf.gz
+tabix -p vcf chr1_unphased_20Mb.vcf.gz
+bcftools index chr1_unphased_20Mb.vcf.gz
+````

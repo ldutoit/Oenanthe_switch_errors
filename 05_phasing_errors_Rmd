@@ -1,0 +1,144 @@
+---
+title: "Switch Error Rates: Full Cohort vs. Within-Group Phasing"
+output: github_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(dplyr)
+library(ggplot2)
+```
+
+## Load data
+
+
+```{r load-data}
+getwd()
+df <- read.delim("combined_summary_all_groups.tsv", stringsAsFactors = FALSE)
+
+df <- df %>%
+  mutate(n_variants = phased_count)  # phased_count == ground_truth_count for every sample
+
+
+
+
+
+str(df)
+df$group[which(df$group=="samples_iran")]<-"Iran"
+df$group[which(df$group=="samples_melanoleuca")]<-"melano_withIS"
+df$group[which(df$group=="samples_roandBUKAL")]<-"Ro_BU-KAL"
+df <- df %>%
+  left_join(group_sizes, by = "group")
+group_sizes <- df %>%
+  count(group, name = "group_size")
+```
+
+```{r group-sizes-table}
+knitr::kable(group_sizes)
+```
+
+## Pair each sample: from_unphased vs. its subset group
+
+```{r pair-samples}
+baseline <- df %>%
+  filter(group == "from_unphased") %>%
+  select(sample, switch_error_ALL_baseline = switch_error_rate_ALL_intersec)
+
+subset_runs <- df %>%
+  filter(group != "from_unphased") %>%
+  select(sample, group, switch_error_ALL_subset = switch_error_rate_ALL_intersec)
+
+paired <- subset_runs %>%
+  inner_join(baseline, by = "sample") %>%
+  mutate(difference = switch_error_ALL_subset - switch_error_ALL_baseline)
+
+n_matched <- nrow(paired)
+n_subset_total <- nrow(subset_runs)
+
+paired %>% select(group, sample, switch_error_ALL_baseline, switch_error_ALL_subset, difference) %>%
+  knitr::kable(digits = 3)
+```
+
+`r n_matched` of `r n_subset_total` subset-group samples had a matching
+`from_unphased` entry and are used in the comparisons below. A negative
+`difference` means switch error was *lower* when phased within the subset group
+(i.e. subsetting helped that individual); positive means phasing jointly with
+the full cohort (`from_unphased`) was better for that individual.
+
+## 1. Paired switch error rate, per sample
+
+```{r paired-plot, fig.width=9, fig.height=6}
+plot_long <- paired %>%
+  select(sample, group, from_unphased = switch_error_ALL_baseline, within_group = switch_error_ALL_subset) %>%
+  tidyr::pivot_longer(cols = c(from_unphased, within_group),
+                       names_to = "phasing_run", values_to = "switch_error_rate_ALL_intersec")
+
+ggplot(plot_long, aes(x = phasing_run, y = switch_error_rate_ALL_intersec, group = sample)) +
+  geom_line(alpha = 0.4, color = "grey50") +
+  geom_point(aes(color = phasing_run), size = 2) +
+  facet_wrap(~ group, scales = "free_x") +
+  scale_color_manual(values = c("from_unphased" = "grey40", "within_group" = "steelblue")) +
+  labs(x = NULL, y = "Switch error rate (%) - ALL intersect",
+       title = "Per-sample switch error rate: full cohort vs. within-group phasing",
+       color = "Phasing run") +
+  theme_minimal(base_size = 12)
+```
+
+The wild sample is samples_melanoleuca	IS-HER-1967-007	18245	18245	47.58	43.75
+
+
+## 2. Paired test, per group
+
+Paired Wilcoxon signed-rank test (each sample is its own control here, so a
+paired test has more power than comparing the two groups as independent
+samples).
+
+```{r paired-test}
+paired_tests <- paired %>%
+  group_by(group) %>%
+  summarise(
+    n = n(),
+    overall_phasing_medianb = median(switch_error_ALL_baseline),
+    within_group_phasing_median = median(switch_error_ALL_subset),
+    median_difference = median(difference)
+  
+    )
+
+knitr::kable(paired_tests, digits = 3)
+```
+
+**Interpretation:** `median_difference` = within-group minus from_unphased. A
+
+## 3. Distribution of per-sample differences
+
+```{r diff-boxplot, fig.width=9, fig.height=5}
+ggplot(paired, aes(x = reorder(group, difference, FUN = median), y = difference)) +
+ylim(-1,15)+
+geom_boxplot(outlier.shape = NA, fill = "grey90", alpha = 0.7) +
+  geom_jitter(width = 0.15, alpha = 0.6, color = "steelblue") +
+  labs(x = "Group", y = "Switch error rate difference (within-group minus from_unphased)",
+       title = "Per-sample change in switch error rate when phased within group") +
+  theme_minimal(base_size = 12)
+```
+
+
+**Interpretation:** Compare `median_difference` here to `median_difference` in
+section 2 (switch error). If a group shows both more variants *and* lower
+switch error within-group, that's stronger evidence subsetting helped for
+reasons beyond just variant count — e.g. genetic homogeneity improving the
+phasing HMM, not merely having more sites to work with.
+
+## 5. Switch error rate vs. number of variants, by group
+
+```{r variants-plot, fig.width=8, fig.height=5}
+ ggplot(df %>% filter(group != "from_unphased"),
+       aes(x = n_variants, y = switch_error_rate_ALL_intersec, color = group)) +
+  geom_point(alpha = 0.6) +
+  labs(x = "Number of variants (phased = ground truth count)",
+       y = "Switch error rate (%) - ALL intersect",
+       title = "Switch error rate vs. number of variants (subset groups only)",
+       color = "Group") +
+  theme_minimal()
+```
+
