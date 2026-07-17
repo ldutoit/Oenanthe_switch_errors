@@ -18,8 +18,6 @@ Phasing is run separately for the first 20MB of chromosome. The steps are:
 04. **Summarize** — summarize the number of variants and the switch error rates.
 05. **plots and stats** — plots and stats
 
-##
+## Open questions?
 
-Is it per pop size, or distance to reference genome?
-
-what about my Ne
+Every single physical variant physically phased is also phased statistically?

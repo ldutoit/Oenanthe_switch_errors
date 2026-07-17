@@ -5,7 +5,10 @@ date: "`r Sys.Date()`"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                       dpi = 300, fig.retina = 2)
+library(dplyr)
+library(ggplot2)
 library(dplyr)
 library(ggplot2)
 ```
@@ -19,19 +22,15 @@ df <- read.delim("combined_summary_all_groups.tsv", stringsAsFactors = FALSE)
 
 df <- df %>%
   mutate(n_variants = phased_count)  # phased_count == ground_truth_count for every sample
-
-
-
-
-
 str(df)
 df$group[which(df$group=="samples_iran")]<-"Iran"
 df$group[which(df$group=="samples_melanoleuca")]<-"melano_withIS"
 df$group[which(df$group=="samples_roandBUKAL")]<-"Ro_BU-KAL"
-df <- df %>%
-  left_join(group_sizes, by = "group")
+
 group_sizes <- df %>%
   count(group, name = "group_size")
+df <- df %>%
+  left_join(group_sizes, by = "group")
 ```
 
 ```{r group-sizes-table}
