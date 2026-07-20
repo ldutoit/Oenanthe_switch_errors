@@ -27,10 +27,10 @@ for GROUPDIR in */; do
     sample=$(basename "$f" .phased.vcf.gz)
     gt_file="${sample}.ground_truth.vcf.gz"
 
-    phased_n=$(zcat "$f" | grep -vc "^#")
+    phased_n=$(zcat "$f"| grep -v "^#" | grep -c "|" )
 
     if [[ -f "$gt_file" ]]; then
-      gt_n=$(zcat "$gt_file" | grep -vc "^#")
+      gt_n=$(zcat "$gt_file" | grep -v "^#" | grep -c "|" )
     else
       gt_n="NA"
     fi
