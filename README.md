@@ -1,4 +1,4 @@
-#README
+# README
 
 The goal is to assess whether linked-reads are needed for phasing in the Oenanthe Genoscape project.
 
@@ -19,6 +19,8 @@ Phasing is run separately for the first 20MB of chromosome. The steps are:
 03. **SHAPEIT5** — run per chromosome. We are only comparing the phased via whatshap to the phase via shapeit without whatshap. Shape it report an error if N <50, so we can't do below 50.
 04. **Summarize** — summarize the number of variants and the switch error rates.
 05. **plots and stats** — plots and stats
+
+The VCF of whatshap only is stored at /cluster/work/gdc/shared/p757/data/oenanthe/data/phasing_errors_ludo/ 
 
 ## Summary
 
